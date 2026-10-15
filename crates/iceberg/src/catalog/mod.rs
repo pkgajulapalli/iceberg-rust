@@ -368,11 +368,22 @@ pub struct TableCreation {
 
 /// TableCommit represents the commit of a table in the catalog.
 ///
-/// The builder is marked as private since it's dangerous and error-prone to construct
-/// [`TableCommit`] directly.
-/// Users are supposed to use [`crate::transaction::Transaction`] to update table.
+/// Prefer [`crate::transaction::Transaction`]. Building a [`TableCommit`] directly is for
+/// operations no transaction action covers yet (e.g. a hand-built `replace` snapshot); the
+/// caller owns the correctness of its updates and must guard them with requirements.
+///
+/// ```
+/// use iceberg::{NamespaceIdent, TableCommit, TableIdent, TableRequirement};
+///
+/// let ident = TableIdent::new(NamespaceIdent::new("ns".into()), "t".into());
+/// let commit = TableCommit::builder()
+///     .ident(ident.clone())
+///     .requirements(vec![TableRequirement::NotExist])
+///     .updates(vec![])
+///     .build();
+/// assert_eq!(commit.identifier(), &ident);
+/// ```
 #[derive(Debug, TypedBuilder)]
-#[builder(build_method(vis = "pub(crate)"))]
 pub struct TableCommit {
     /// The table ident.
     ident: TableIdent,
